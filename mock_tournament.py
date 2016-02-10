@@ -6,6 +6,7 @@ from trueskill.backends import cdf
 from trueskill import quality_1vs1
 from trueskill import TrueSkill
 from random import random
+from trueskill import calc_draw_margin
 
 
 class Player:
@@ -28,7 +29,7 @@ class TSCalc:
         self.env = TrueSkill(self.mu0, self.sigma0, self.beta, self.tau, self.draw, 'scipy')
 
     def win_probability(self, player, opponent):
-        delta_mu = player.rating.mu - opponent.rating.mu - self.env.quality_1vs1(player.rating, opponent.rating)
+        delta_mu = player.rating.mu - opponent.rating.mu - calc_draw_margin(self.draw, 2, self.env)
         denom = sqrt(2 * (self.beta * self.beta) + pow(player.rating.sigma, 2) + pow(opponent.rating.sigma, 2))
         return cdf(delta_mu / denom)
 
@@ -193,7 +194,22 @@ def one_thousand_test_all_same_player(filename):
     print '-------------------------'
     t.print_standings()
 
-
+def test_draw(player):
+    win0 = 0
+    win1 = 0
+    draw = 0
+    tc = TSCalc()
+    for i in range(0, 1000):
+        result = tc.result(player, player)
+        if result == [1.0, 0.0]:
+            win0 += 1
+        elif result == [0.0, 1.0]:
+            win1 += 1
+        elif result == [0.5, 0.5]:
+            draw += 1
+    print 'Player 0 wins: ' + str(win0)
+    print 'Player 1 wins: ' + str(win1)
+    print 'Draws: ' + str(draw)
 
 def initialize_players(filename):
     players = []
